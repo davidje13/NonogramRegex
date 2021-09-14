@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Nonogram Regex Solver</title>
+		<link rel="icon" href="resources/favicon.png" />
+		<link rel="stylesheet" href="resources/index.css" />
+		<script src="build/index.js" async></script>
+	</head>
+	<body>
+		<header>
+			<h1>Nonogram Regex Solver</h1>
+		</header>
+		<main>
+			<section class="tabbox">
+				<input type="radio" name="mode" id="t1" value="single" checked /><label for="t1">Single</label>
+				<input type="radio" name="mode" id="t2" value="rect" /><label for="t2">Rectangle</label>
+				<input type="radio" name="mode" id="t3" value="hex" /><label for="t3">Hexagon</label>
+				<form id="form-single" class="tabcontent" data-for="t1">
+					<div class="input-grid">
+						<label for="single-pattern">Pattern</label>
+						<input type="text" id="single-pattern" value="H(alp|el{2,}[o]) (Wor|wo)lds?" />
+						<label for="single-input">Input <span class="note" title="Use &ldquo;?&rdquo; for unknown characters">?</span></label>
+						<input type="text" id="single-input" value="??????W????" />
+						<label for="single-output">Result</label>
+						<output id="single-output"></output>
+						<span id="single-error" class="error"></span>
+					</div>
+				</form>
+				<form id="form-rect" class="tabcontent" data-for="t2">
+					TODO
+				</form>
+				<form id="form-hex" class="tabcontent" data-for="t3">
+					TODO
+				</form>
+			</section>
+		</main>
+		<div id="loading">Loading&hellip;</div>
+		<noscript>
+			<div id="noscript-overlay">You must enable JavaScript to use this tool.</div>
+		</noscript>
+	</body>
+</html>
