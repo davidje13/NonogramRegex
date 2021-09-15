@@ -18,16 +18,24 @@
 				<form id="form-single" class="tabcontent" data-for="t1">
 					<div class="input-grid">
 						<label for="single-pattern">Pattern</label>
-						<input type="text" id="single-pattern" value="H(alp|el{2,}[o]) (Wor|wo)lds?" />
+						<input type="text" name="pattern" id="single-pattern" value="H(alp|el{2,}[o]) (Wor|wo)lds?" />
 						<label for="single-input">Input <span class="note" title="Use &ldquo;?&rdquo; for unknown characters">?</span></label>
-						<input type="text" id="single-input" value="??????W????" />
+						<input type="text" name="input" id="single-input" value="??????W????" />
 						<label for="single-output">Result</label>
-						<output id="single-output"></output>
-						<span id="single-error" class="error"></span>
+						<output name="output" id="single-output"></output>
+						<span class="error"></span>
 					</div>
 				</form>
 				<form id="form-rect" class="tabcontent" data-for="t2">
-					TODO
+					<input type="hidden" name="rows" value="2" />
+					<input type="hidden" name="cols" value="2" />
+					<section class="grid">
+						<button type="button" name="add-col">+</button>
+						<button type="button" name="remove-col">-</button>
+						<button type="button" name="add-row">+</button>
+						<button type="button" name="remove-row">-</button>
+					</section>
+					<span class="error"></span>
 				</form>
 				<form id="form-hex" class="tabcontent" data-for="t3">
 					TODO

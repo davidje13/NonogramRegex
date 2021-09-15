@@ -1,6 +1,7 @@
-html, body, h1, h2, h3, form, p, input {
+html, body, h1, h2, h3, form, p, input, output, div, section {
 	margin: 0;
 	padding: 0;
+	box-sizing: border-box;
 }
 
 body {
@@ -77,9 +78,83 @@ output {
 	background: #FF8080;
 }
 
+.grid {
+	display: block;
+	margin: 0 auto;
+	position: relative;
+	--x: 12rem;
+	--y: 12rem;
+	--w: 3rem;
+	--h: 3rem;
+}
+
+.grid button {
+	position: absolute;
+	width: 1.5rem;
+	height: 1.5rem;
+}
+
+.grid button[name="add-row"] {
+	top: calc(var(--y) - 2rem);
+	left: 0;
+}
+
+.grid button[name="remove-row"] {
+	top: calc(var(--y) - 4rem);
+	left: 0;
+}
+
+.grid button[name="add-col"] {
+	left: calc(var(--x) - 2rem);
+	top: 0;
+}
+
+.grid button[name="remove-col"] {
+	left: calc(var(--x) - 4rem);
+	top: 0;
+}
+
+.grid .pattern {
+	position: absolute;
+	text-align: right;
+	font-size: 0.9rem;
+}
+
+.grid .pattern.row {
+	width: var(--x);
+	height: var(--h);
+	left: 0;
+}
+
+.grid .pattern.col {
+	width: var(--y);
+	height: var(--w);
+	top: 0;
+	transform: rotate(90deg);
+	transform-origin: calc(var(--w) / 2) calc(var(--w) / 2);
+}
+
+.grid .cell {
+	position: absolute;
+	padding: 0.2rem;
+	width: var(--w);
+	height: var(--h);
+	font-size: 0.5rem;
+	text-align: center;
+	line-height: calc(var(--h) - 0.4rem - 2px);
+}
+
+.grid .cell.solved {
+	background: #DDFFCC;
+	font-size: 1.5rem;
+}
+
 .error {
 	display: none;
 	grid-column: 1 / 3;
+	font-size: 0.9rem;
+	font-style: italic;
+	color: #800000;
 }
 
 .fail .error {

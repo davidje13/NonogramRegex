@@ -7,7 +7,6 @@
 		"noImplicitOverride": true,
 		"noImplicitReturns": true,
 		"noPropertyAccessFromIndexSignature": true,
-		"noUncheckedIndexedAccess": true,
 		"noUnusedLocals": true,
 		"importsNotUsedAsValues": "error",
 		"noEmitOnError": true
