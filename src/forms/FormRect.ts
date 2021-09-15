@@ -81,22 +81,13 @@ export default class FormSingle extends CommonForm {
 }
 
 class Grid2D {
-	readonly patternRows: Pattern[] = [];
-	readonly patternCols: Pattern[] = [];
-	readonly cells = new Set<Cell>();
+	private readonly patternRows: Pattern[] = [];
+	private readonly patternCols: Pattern[] = [];
+	private readonly cells: Cell[][] = [];
 
 	constructor(
 		private container: HTMLElement,
 	) {}
-
-	getCell(row: number, col: number): Cell | null {
-		for (const cell of this.cells) {
-			if (cell.row === row && cell.col === col) {
-				return cell;
-			}
-		}
-		return null;
-	}
 
 	get rows() { return this.patternRows.length; }
 	get cols() { return this.patternCols.length; }
@@ -111,16 +102,16 @@ class Grid2D {
 	}
 
 	clearData() {
-		for (const cell of this.cells) {
+		this.cells.forEach((r) => r.forEach((cell) => {
 			cell.eCell.classList.remove('solved');
 			cell.value = '';
-		}
+		}));
 	}
 
 	setData(data: RevExp.CharacterClass[]) {
 		const { cols } = this;
-		for (const cell of this.cells) {
-			const value = data[cell.row * cols + cell.col];
+		this.cells.forEach((r, row) => r.forEach((cell, col) => {
+			const value = data[row * cols + col];
 			if (value.isSingular()) {
 				cell.eCell.classList.add('solved');
 				cell.value = display(value.singularChar());
@@ -128,7 +119,7 @@ class Grid2D {
 				cell.eCell.classList.remove('solved');
 				cell.value = String(value);
 			}
-		}
+		}));
 	}
 
 	getClues(patternCache: LRUCache<string, RevExp>): Clue[] {
@@ -158,88 +149,76 @@ class Grid2D {
 	resize(rows: number, cols: number) {
 		const oldRows = this.patternRows.length;
 		const oldCols = this.patternCols.length;
-		if (rows < oldRows || cols < oldCols) {
-			for (const cell of this.cells) {
-				if (cell.row >= rows || cell.col >= cols) {
-					cell.remove();
-					this.cells.delete(cell);
-				}
-			}
+		if (rows === oldRows && cols === oldCols) {
+			return;
 		}
-		for (let r = oldRows; r < rows; ++r) {
-			for (let c = 0; c < Math.min(oldCols, cols); ++c) {
-				this.cells.add(new Cell(this.container, r, c));
-			}
-			this.patternRows.push(new Pattern(this.container, r, -1));
-		}
-		for (let r = rows; r < oldRows; ++r) {
-			this.patternRows[r].remove();
+
+		// remove all from DOM
+		this.patternCols.forEach((pattern) => this.container.removeChild(pattern.ePattern));
+		this.patternRows.forEach((pattern) => this.container.removeChild(pattern.ePattern));
+		this.cells.forEach((r) => r.forEach((cell) => this.container.removeChild(cell.eCell)));
+
+		// update elements
+		for (let row = oldRows; row < rows; ++row) {
+			this.cells.push([]);
+			this.patternRows.push(new Pattern(row, -1));
 		}
 		this.patternRows.length = rows;
-
-		for (let c = oldCols; c < cols; ++c) {
-			for (let r = 0; r < rows; ++r) {
-				this.cells.add(new Cell(this.container, r, c));
-			}
-			this.patternCols.push(new Pattern(this.container, -1, c));
-		}
-		for (let c = cols; c < oldCols; ++c) {
-			this.patternCols[c].remove();
+		for (let col = oldCols; col < cols; ++col) {
+			this.patternCols.push(new Pattern(-1, col));
 		}
 		this.patternCols.length = cols;
-		this.container.style.width = `calc(var(--x) + var(--w) * ${cols})`;
-		this.container.style.height = `calc(var(--y) + var(--h) * ${rows})`;
+		for (let row = 0; row < rows; ++row) {
+			const r = this.cells[row];
+			for (let col = r.length; col < cols; ++col) {
+				r.push(new Cell(row, col));
+			}
+			r.length = cols;
+		}
+		this.cells.length = rows;
+
+		// update DOM
+		this.patternCols.forEach((pattern) => this.container.appendChild(pattern.ePattern));
+		for (let row = 0; row < rows; ++row) {
+			this.container.appendChild(this.patternRows[row].ePattern);
+			this.cells[row].forEach((cell) => this.container.appendChild(cell.eCell));
+		}
+		this.container.style.width = `calc(var(--w) * ${cols})`;
+		this.container.style.height = `calc(var(--h) * ${rows})`;
 	}
 }
 
 class Pattern {
-	private readonly ePattern: HTMLInputElement;
+	public readonly ePattern: HTMLInputElement;
 
-	constructor(
-		private readonly grid: HTMLElement,
-		public readonly row: number,
-		public readonly col: number,
-	) {
+	constructor(row: number, col: number) {
 		this.ePattern = document.createElement('input');
 		this.ePattern.setAttribute('type', 'text');
-		this.ePattern.setAttribute('name', `pattern_${row}_${col}`);
 		if (row === -1) {
-			this.ePattern.style.left = `calc(var(--x) + var(--w) * ${col})`;
+			this.ePattern.setAttribute('name', `pattern_col_${col}`);
+			this.ePattern.style.left = `calc(var(--w) * ${col})`;
 			this.ePattern.className = 'pattern col';
 		} else {
-			this.ePattern.style.top = `calc(var(--y) + var(--h) * ${row})`;
+			this.ePattern.setAttribute('name', `pattern_row_${row}`);
+			this.ePattern.style.top = `calc(var(--h) * ${row})`;
 			this.ePattern.className = 'pattern row';
 		}
 		this.ePattern.value = '.*';
-		grid.appendChild(this.ePattern);
 	}
 
 	get pattern() { return this.ePattern.value; }
-
-	remove() {
-		this.grid.removeChild(this.ePattern);
-	}
 }
 
 class Cell {
 	public readonly eCell: HTMLOutputElement;
 
-	constructor(
-		private readonly grid: HTMLElement,
-		public readonly row: number,
-		public readonly col: number,
-	) {
+	constructor(row: number, col: number) {
 		this.eCell = document.createElement('output');
 		this.eCell.setAttribute('name', `out_${row}_${col}`);
 		this.eCell.className = 'cell';
-		this.eCell.style.top = `calc(var(--y) + var(--h) * ${row})`;
-		this.eCell.style.left = `calc(var(--x) + var(--w) * ${col})`;
-		grid.appendChild(this.eCell);
+		this.eCell.style.top = `calc(var(--h) * ${row})`;
+		this.eCell.style.left = `calc(var(--w) * ${col})`;
 	}
 
 	set value(v: string) { this.eCell.value = v || ' '; }
-
-	remove() {
-		this.grid.removeChild(this.eCell);
-	}
 }

@@ -78,12 +78,14 @@ output {
 	background: #FF8080;
 }
 
+#form-rect {
+	padding: 1rem 13rem;
+}
+
 .grid {
 	display: block;
-	margin: 0 auto;
+	margin: 12rem auto;
 	position: relative;
-	--x: 12rem;
-	--y: 12rem;
 	--w: 3rem;
 	--h: 3rem;
 }
@@ -92,50 +94,62 @@ output {
 	position: absolute;
 	width: 1.5rem;
 	height: 1.5rem;
+	user-select: none;
 }
 
 .grid button[name="add-row"] {
-	top: calc(var(--y) - 2rem);
-	left: 0;
+	bottom: -2rem;
+	left: -4rem;
 }
 
 .grid button[name="remove-row"] {
-	top: calc(var(--y) - 4rem);
-	left: 0;
+	top: -2rem;
+	left: -4rem;
 }
 
 .grid button[name="add-col"] {
-	left: calc(var(--x) - 2rem);
-	top: 0;
+	right: -2rem;
+	top: -4rem;
 }
 
 .grid button[name="remove-col"] {
-	left: calc(var(--x) - 4rem);
-	top: 0;
+	left: -2rem;
+	top: -4rem;
+}
+
+.grid .pattern, .grid .cell {
+	position: absolute;
+	border: 1px solid #BBBBCC;
+	border-radius: 0;
 }
 
 .grid .pattern {
-	position: absolute;
 	text-align: right;
 	font-size: 0.9rem;
+	width: 12rem;
+	top: -12rem;
+	left: -12rem;
+	border-top-left-radius: 5px;
+	border-bottom-left-radius: 5px;
+	background: #FCFCFE;
+}
+
+.grid .pattern:focus {
+	background: white;
 }
 
 .grid .pattern.row {
-	width: var(--x);
 	height: var(--h);
-	left: 0;
 }
 
 .grid .pattern.col {
-	width: var(--y);
 	height: var(--w);
-	top: 0;
 	transform: rotate(90deg);
 	transform-origin: calc(var(--w) / 2) calc(var(--w) / 2);
+	cursor: vertical-text;
 }
 
 .grid .cell {
-	position: absolute;
 	padding: 0.2rem;
 	width: var(--w);
 	height: var(--h);
