@@ -117,6 +117,15 @@ output {
 	top: -4rem;
 }
 
+.grid .double {
+	display: block;
+	position: absolute;
+	top: -1.5rem;
+	right: -12rem;
+	width: 11.5rem;
+	font-size: 0.8rem;
+}
+
 .grid .pattern, .grid .cell {
 	position: absolute;
 	border: 1px solid #BBBBCC;
@@ -124,13 +133,8 @@ output {
 }
 
 .grid .pattern {
-	text-align: right;
 	font-size: 0.9rem;
 	width: 12rem;
-	top: -12rem;
-	left: -12rem;
-	border-top-left-radius: 5px;
-	border-bottom-left-radius: 5px;
 	background: #FCFCFE;
 }
 
@@ -138,15 +142,39 @@ output {
 	background: white;
 }
 
-.grid .pattern.row {
-	height: var(--h);
+.grid .pattern.row, .grid .pattern.col {
+	text-align: right;
+	border-top-left-radius: 5px;
+	border-bottom-left-radius: 5px;
 }
 
-.grid .pattern.col {
+.grid .pattern.altrow, .grid .pattern.altcol {
+	text-align: left;
+	border-top-right-radius: 5px;
+	border-bottom-right-radius: 5px;
+}
+
+.grid .pattern.row, .grid .pattern.altrow {
+	height: var(--h);
+}
+.grid .pattern.row {
+	left: -12rem;
+}
+.grid .pattern.altrow {
+	right: -12rem;
+}
+
+.grid .pattern.col, .grid .pattern.altcol {
 	height: var(--w);
 	transform: rotate(90deg);
 	transform-origin: calc(var(--w) / 2) calc(var(--w) / 2);
 	cursor: vertical-text;
+}
+.grid .pattern.col {
+	top: -12rem;
+}
+.grid .pattern.altcol {
+	bottom: calc(var(--w) * -1);
 }
 
 .grid .cell {

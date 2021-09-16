@@ -1,6 +1,5 @@
 import RevExp from 'revexp';
-import type LRUCache from '../LRUCache';
-import { solve, Clue } from '../solver';
+import { solve } from '../solver';
 import { display, elNamed } from '../utils';
 import CommonForm from './CommonForm';
 
@@ -18,12 +17,19 @@ export default class FormSingle extends CommonForm {
 	}
 
 	override refresh() {
-		this.grid.resize(this.rows, this.cols);
+		this.grid.resize(this.rows, this.cols, this.double);
 
 		const data = this.grid.getBlankData();
+		const clues = this.grid.getClues();
 		try {
-			const clues = this.grid.getClues(this.patternCache);
-			const resolvedData = solve(data, clues);
+			const compiledClues = clues.map(({ name, pattern, indices }) => {
+				try {
+					return { name, pattern: this.patternCache.get(pattern), indices };
+				} catch (e: unknown) {
+					throw new Error(`${e} in ${name}`);
+				}
+			});
+			const resolvedData = solve(data, compiledClues);
 			this.grid.setData(resolvedData);
 			this.error = null;
 		} catch (e: unknown) {
@@ -60,6 +66,7 @@ export default class FormSingle extends CommonForm {
 	private set rows(v: number) { this.eRows.value = String(v); }
 	private get cols() { return Number.parseInt(this.eCols.value, 10); }
 	private set cols(v: number) { this.eCols.value = String(v); }
+	private get double() { return this.eDouble.checked; }
 
 	private set error(v: string | null) {
 		if (v !== null) {
@@ -72,6 +79,7 @@ export default class FormSingle extends CommonForm {
 
 	private readonly eRows = elNamed(this.form, 'rows') as HTMLInputElement;
 	private readonly eCols = elNamed(this.form, 'cols') as HTMLInputElement;
+	private readonly eDouble = elNamed(this.form, 'double') as HTMLInputElement;
 	private readonly eAddRow = elNamed(this.form, 'add-row') as HTMLButtonElement;
 	private readonly eAddCol = elNamed(this.form, 'add-col') as HTMLButtonElement;
 	private readonly eRemoveRow = elNamed(this.form, 'remove-row') as HTMLButtonElement;
@@ -83,21 +91,18 @@ export default class FormSingle extends CommonForm {
 class Grid2D {
 	private readonly patternRows: Pattern[] = [];
 	private readonly patternCols: Pattern[] = [];
+	private readonly patternAltRows: Pattern[] = [];
+	private readonly patternAltCols: Pattern[] = [];
 	private readonly cells: Cell[][] = [];
+	private isDouble = false;
 
 	constructor(
 		private container: HTMLElement,
 	) {}
 
-	get rows() { return this.patternRows.length; }
-	get cols() { return this.patternCols.length; }
-
 	getBlankData(): RevExp.CharacterClass[] {
-		const { rows, cols } = this;
 		const data: RevExp.CharacterClass[] = [];
-		for (let i = 0; i < rows * cols; ++i) {
-			data.push(RevExp.CharacterClass.ANY);
-		}
+		this.cells.forEach((r) => r.forEach(() => data.push(RevExp.CharacterClass.ANY)));
 		return data;
 	}
 
@@ -109,7 +114,7 @@ class Grid2D {
 	}
 
 	setData(data: RevExp.CharacterClass[]) {
-		const { cols } = this;
+		const cols = this.patternCols.length;
 		this.cells.forEach((r, row) => r.forEach((cell, col) => {
 			const value = data[row * cols + col];
 			if (value.isSingular()) {
@@ -122,52 +127,76 @@ class Grid2D {
 		}));
 	}
 
-	getClues(patternCache: LRUCache<string, RevExp>): Clue[] {
-		const { rows, cols } = this;
+	getClues(): RawClue[] {
+		const rows = this.patternRows.length;
+		const cols = this.patternCols.length;
 
-		const clues: Clue[] = [];
+		const clues: RawClue[] = [];
 		for (let r = 0; r < rows; ++r) {
-			const pattern = patternCache.get(this.patternRows[r].pattern);
 			const indices: number[] = [];
 			for (let c = 0; c < cols; ++c) {
 				indices.push(r * cols + c);
 			}
-			clues.push({ name: `row ${r + 1}`, pattern, indices });
+			clues.push({
+				name: `row ${r + 1}`,
+				pattern: this.patternRows[r].pattern,
+				indices,
+			});
+			if (this.isDouble) {
+				clues.push({
+					name: `alt row ${r + 1}`,
+					pattern: this.patternAltRows[r].pattern,
+					indices,
+				});
+			}
 		}
 		for (let c = 0; c < cols; ++c) {
-			const pattern = patternCache.get(this.patternCols[c].pattern);
 			const indices: number[] = [];
 			for (let r = 0; r < rows; ++r) {
 				indices.push(r * cols + c);
 			}
-			clues.push({ name: `column ${c + 1}`, pattern, indices });
+			clues.push({
+				name: `column ${c + 1}`,
+				pattern: this.patternCols[c].pattern,
+				indices,
+			});
+			if (this.isDouble) {
+				clues.push({
+					name: `alt column ${c + 1}`,
+					pattern: this.patternAltCols[c].pattern,
+					indices,
+				});
+			}
 		}
-
 		return clues;
 	}
 
-	resize(rows: number, cols: number) {
+	resize(rows: number, cols: number, double: boolean) {
 		const oldRows = this.patternRows.length;
 		const oldCols = this.patternCols.length;
-		if (rows === oldRows && cols === oldCols) {
+		if (rows === oldRows && cols === oldCols && double === this.isDouble) {
 			return;
 		}
 
 		// remove all from DOM
-		this.patternCols.forEach((pattern) => this.container.removeChild(pattern.ePattern));
-		this.patternRows.forEach((pattern) => this.container.removeChild(pattern.ePattern));
+		[...this.patternRows, ...this.patternCols]
+			.forEach((pattern) => this.container.removeChild(pattern.ePattern));
+		if (this.isDouble) {
+			[...this.patternAltRows, ...this.patternAltCols]
+				.forEach((pattern) => this.container.removeChild(pattern.ePattern));
+		}
 		this.cells.forEach((r) => r.forEach((cell) => this.container.removeChild(cell.eCell)));
 
 		// update elements
 		for (let row = oldRows; row < rows; ++row) {
 			this.cells.push([]);
-			this.patternRows.push(new Pattern(row, -1));
+			this.patternRows.push(new Pattern('row', row));
+			this.patternAltRows.push(new Pattern('altrow', row));
 		}
-		this.patternRows.length = rows;
 		for (let col = oldCols; col < cols; ++col) {
-			this.patternCols.push(new Pattern(-1, col));
+			this.patternCols.push(new Pattern('col', col));
+			this.patternAltCols.push(new Pattern('altcol', col));
 		}
-		this.patternCols.length = cols;
 		for (let row = 0; row < rows; ++row) {
 			const r = this.cells[row];
 			for (let col = r.length; col < cols; ++col) {
@@ -175,34 +204,49 @@ class Grid2D {
 			}
 			r.length = cols;
 		}
+		this.patternRows.length = rows;
+		this.patternCols.length = cols;
+		this.patternAltRows.length = rows;
+		this.patternAltCols.length = cols;
 		this.cells.length = rows;
+		this.isDouble = double;
 
 		// update DOM
 		this.patternCols.forEach((pattern) => this.container.appendChild(pattern.ePattern));
 		for (let row = 0; row < rows; ++row) {
 			this.container.appendChild(this.patternRows[row].ePattern);
 			this.cells[row].forEach((cell) => this.container.appendChild(cell.eCell));
+			if (double) {
+				this.container.appendChild(this.patternAltRows[row].ePattern);
+			}
+		}
+		if (double) {
+			this.patternAltCols.forEach((pattern) => this.container.appendChild(pattern.ePattern));
 		}
 		this.container.style.width = `calc(var(--w) * ${cols})`;
 		this.container.style.height = `calc(var(--h) * ${rows})`;
 	}
 }
 
+export interface RawClue {
+	name: string;
+	pattern: string;
+	indices: number[];
+}
+
 class Pattern {
 	public readonly ePattern: HTMLInputElement;
 
-	constructor(row: number, col: number) {
+	constructor(type: string, num: number) {
 		this.ePattern = document.createElement('input');
 		this.ePattern.setAttribute('type', 'text');
-		if (row === -1) {
-			this.ePattern.setAttribute('name', `pattern_col_${col}`);
-			this.ePattern.style.left = `calc(var(--w) * ${col})`;
-			this.ePattern.className = 'pattern col';
+		this.ePattern.setAttribute('name', `pattern_${type}_${num}`);
+		if (type === 'col' || type === 'altcol') {
+			this.ePattern.style.left = `calc(var(--w) * ${num})`;
 		} else {
-			this.ePattern.setAttribute('name', `pattern_row_${row}`);
-			this.ePattern.style.top = `calc(var(--h) * ${row})`;
-			this.ePattern.className = 'pattern row';
+			this.ePattern.style.top = `calc(var(--h) * ${num})`;
 		}
+		this.ePattern.className = `pattern ${type}`;
 		this.ePattern.value = '.*';
 	}
 
