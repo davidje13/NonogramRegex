@@ -185,6 +185,8 @@ output {
 	--sx: var(--d);
 	--sy: calc(var(--d) * 0.866025403784439); /* sqrt(3)/2 */
 	margin: 13rem auto;
+	min-width: 1px;
+	min-height: 1px;
 }
 
 .grid.hex button {
@@ -193,12 +195,8 @@ output {
 	margin: -1rem;
 }
 
-.grid.hex button[name="add-d1"] { top: calc(-8rem + 0.866025403784439rem * 5); left: calc(-5rem - 0.5rem * 5); transform: rotate(120deg); }
-.grid.hex button[name="remove-d1"] { top: calc(-8rem + 0.866025403784439rem * 3); left: calc(-5rem - 0.5rem * 3); transform: rotate(120deg); }
-.grid.hex button[name="add-d2"] { top: calc(-8rem); left: calc(-5rem + 1rem * 5); }
-.grid.hex button[name="remove-d2"] { top: calc(-8rem); left: calc(-5rem + 1rem * 3); }
-.grid.hex button[name="add-d3"] { top: calc(-8rem + 0.866025403784439rem * 5); left: calc(-5rem + 0.5rem * 5); transform: rotate(60deg); }
-.grid.hex button[name="remove-d3"] { top: calc(-8rem + 0.866025403784439rem * 3); left: calc(-5rem + 0.5rem * 3); transform: rotate(60deg); }
+.grid.hex button[name="add-d1"], .grid.hex button[name="remove-d1"] { transform: rotate(120deg); }
+.grid.hex button[name="add-d3"], .grid.hex button[name="remove-d3"] { transform: rotate(-120deg); }
 
 .grid.hex .pattern, .grid.hex .cell {
 	margin: calc(var(--h) * -0.5);

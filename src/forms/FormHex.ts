@@ -1,7 +1,12 @@
 import RevExp from 'revexp';
 import type LRUCache from '../LRUCache';
-import { display } from '../utils';
+import { display, elNamed } from '../utils';
 import FormGridBase, { Grid, RawClue } from './FormGridBase';
+
+function setPos(o: HTMLElement, pos: Position) {
+	o.style.top = pos.top;
+	o.style.left = pos.left;
+}
 
 export default class FormHex extends FormGridBase<GridHex> {
 	constructor(
@@ -15,20 +20,37 @@ export default class FormHex extends FormGridBase<GridHex> {
 			new GridHex(form.querySelector('.grid') as HTMLElement),
 		);
 	}
+
+	override refresh() {
+		super.refresh();
+		setPos(elNamed(this.form, 'add-d1'), this.grid.corner(6).addMult(GridHex.D1, -1.7));
+		setPos(elNamed(this.form, 'remove-d1'), this.grid.corner(6).addMult(GridHex.D1, -1));
+		setPos(elNamed(this.form, 'add-d2'), this.grid.corner(4).addMult(GridHex.D2, 1.7));
+		setPos(elNamed(this.form, 'remove-d2'), this.grid.corner(4).addMult(GridHex.D2, 1));
+		setPos(elNamed(this.form, 'add-d3'), this.grid.corner(2).addMult(GridHex.D3, -1.7));
+		setPos(elNamed(this.form, 'remove-d3'), this.grid.corner(2).addMult(GridHex.D3, -1));
+	}
 }
 
 class GridHex implements Grid {
-	private d1 = 0;
-	private d2 = 0;
-	private d3 = 0;
+	public static readonly D1 = { x: 0.5, y: -1 };
+	public static readonly D2 = { x: 1, y: 0 };
+	public static readonly D3 = { x: 0.5, y: 1 };
+
+	private d1 = -1;
+	private d2 = -1;
+	private d3 = -1;
 	private readonly patterns1: Pattern[] = [];
 	private readonly patterns2: Pattern[] = [];
 	private readonly patterns3: Pattern[] = [];
 	private readonly cells: Cell[] = [];
+	private corners: Position[] = [];
 
 	constructor(
 		private container: HTMLElement,
 	) {}
+
+	corner(n: number): Position { return this.corners[n - 1]; }
 
 	getBlankData(): RevExp.CharacterClass[] {
 		return this.cells.map(() => RevExp.CharacterClass.ANY);
@@ -110,40 +132,39 @@ class GridHex implements Grid {
 		 * d2 = 2->3 (=6->5)
 		 * d3 = 3->4 (=1->6)
 		*/
-		const D1 = { x: 0.5, y: -1 };
-		const D2 = { x: 1, y: 0 };
-		const D3 = { x: 0.5, y: 1 };
-		const c1 = { x: 0, y: d1 - 1 };
-		const c2 = addMult(c1, D1, d1 - 1);
-		const c3 = addMult(c2, D2, d2 - 1);
-		const c4 = addMult(c3, D3, d3 - 1);
-		const c5 = addMult(c4, D1, -(d1 - 1));
-		const c6 = addMult(c5, D2, -(d2 - 1));
+		const { D1, D2, D3 } = GridHex;
+		const c1 = new Position(0, d1 - 1);
+		const c2 = c1.addMult(D1, d1 - 1);
+		const c3 = c2.addMult(D2, d2 - 1);
+		const c4 = c3.addMult(D3, d3 - 1);
+		const c5 = c4.addMult(D1, -(d1 - 1));
+		const c6 = c5.addMult(D2, -(d2 - 1));
+		this.corners = [c1, c2, c3, c4, c5, c6];
 
 		for (let i = 0; i < d1; ++i) {
-			this.patterns2.push(new Pattern('d2', addMult(addMult(c2, D1, -i), D2, -1)));
+			this.patterns2.push(new Pattern('d2', c2.addMult(D1, -i).addMult(D2, -1)));
 		}
 		for (let i = 1; i < d3; ++i) {
-			this.patterns2.push(new Pattern('d2', addMult(addMult(c1, D3, i), D2, -1)));
+			this.patterns2.push(new Pattern('d2', c1.addMult(D3, i).addMult(D2, -1)));
 		}
 		for (let i = 0; i < d2; ++i) {
-			this.patterns3.push(new Pattern('d3', addMult(addMult(c6, D2, i), D3, 1)));
+			this.patterns3.push(new Pattern('d3', c6.addMult(D2, i).addMult(D3, 1)));
 		}
 		for (let i = 1; i < d1; ++i) {
-			this.patterns3.push(new Pattern('d3', addMult(addMult(c5, D1, i), D3, 1)));
+			this.patterns3.push(new Pattern('d3', c5.addMult(D1, i).addMult(D3, 1)));
 		}
 		for (let i = 0; i < d3; ++i) {
-			this.patterns1.push(new Pattern('d1', addMult(addMult(c4, D3, -i), D1, 1)));
+			this.patterns1.push(new Pattern('d1', c4.addMult(D3, -i).addMult(D1, 1)));
 		}
 		for (let i = 1; i < d2; ++i) {
-			this.patterns1.push(new Pattern('d1', addMult(addMult(c3, D2, -i), D1, 1)));
+			this.patterns1.push(new Pattern('d1', c3.addMult(D2, -i).addMult(D1, 1)));
 		}
 		for (let y = 0; y < d1 + d3 - 1; ++y) {
-			const begin = addMult(c2, D1, -y);
+			const begin = c2.addMult(D1, -y);
 			const xl = Math.max(0, y - (d1 - 1));
 			const xr = Math.min(y + d2, d2 + d3 - 1);
 			for (let x = xl; x < xr; ++x) {
-				this.cells.push(new Cell(addMult(begin, D2, x)));
+				this.cells.push(new Cell(begin.addMult(D2, x)));
 			}
 		}
 
@@ -155,13 +176,13 @@ class GridHex implements Grid {
 	}
 
 	private removeDOM() {
-		[...this.patterns1, ...this.patterns2, ...this.patterns3]
+		[...this.patterns2, ...this.patterns3, ...this.patterns1]
 			.forEach((pattern) => this.container.removeChild(pattern.ePattern));
 		this.cells.forEach((cell) => this.container.removeChild(cell.eCell));
 	}
 
 	private addDOM() {
-		[...this.patterns1, ...this.patterns2, ...this.patterns3]
+		[...this.patterns2, ...this.patterns3, ...this.patterns1]
 			.forEach((pattern) => this.container.appendChild(pattern.ePattern));
 		this.cells.forEach((cell) => this.container.appendChild(cell.eCell));
 
@@ -175,18 +196,24 @@ interface Vector {
 	y: number;
 }
 
-function addMult(v1: Vector, v2: Vector, s: number): Vector {
-	return { x: v1.x + v2.x * s, y: v1.y + v2.y * s };
+class Position {
+	constructor(private readonly x: number, private readonly y: number) {}
+
+	addMult(vec: Vector, scale: number): Position {
+		return new Position(this.x + vec.x * scale, this.y + vec.y * scale);
+	}
+
+	get left(): string { return `calc(var(--sx) * ${this.x})`; }
+	get top(): string { return `calc(var(--sy) * ${this.y})`; }
 }
 
 class Pattern {
 	public readonly ePattern: HTMLInputElement;
 
-	constructor(type: string, pos: Vector) {
+	constructor(type: string, pos: Position) {
 		this.ePattern = document.createElement('input');
 		this.ePattern.setAttribute('type', 'text');
-		this.ePattern.style.top = `calc(var(--sy) * ${pos.y})`;
-		this.ePattern.style.left = `calc(var(--sx) * ${pos.x})`;
+		setPos(this.ePattern, pos);
 		this.ePattern.className = `pattern ${type}`;
 		this.ePattern.value = '.*';
 	}
@@ -197,11 +224,10 @@ class Pattern {
 class Cell {
 	public readonly eCell: HTMLOutputElement;
 
-	constructor(pos: Vector) {
+	constructor(pos: Position) {
 		this.eCell = document.createElement('output');
 		this.eCell.className = 'cell';
-		this.eCell.style.top = `calc(var(--sy) * ${pos.y})`;
-		this.eCell.style.left = `calc(var(--sx) * ${pos.x})`;
+		setPos(this.eCell, pos);
 	}
 
 	set value(v: string) { this.eCell.value = v || ' '; }

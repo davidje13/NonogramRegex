@@ -1,8 +1,8 @@
-export function el(id: string) {
+export function el(id: string): HTMLElement {
 	return document.getElementById(id)!;
 }
 
-export function elNamed(base: HTMLElement, name: string) {
+export function elNamed(base: HTMLElement, name: string): HTMLElement {
 	return base.querySelector(`[name="${name}"]`)!;
 }
 
