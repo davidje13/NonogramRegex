@@ -1,94 +1,30 @@
 import RevExp from 'revexp';
-import { solve } from '../solver';
+import type LRUCache from '../LRUCache';
 import { display, elNamed } from '../utils';
-import CommonForm from './CommonForm';
+import FormGridBase, { Grid, RawClue } from './FormGridBase';
 
-export default class FormSingle extends CommonForm {
-	override init() {
-		super.init();
-		this.addRow = this.addRow.bind(this);
-		this.addCol = this.addCol.bind(this);
-		this.removeRow = this.removeRow.bind(this);
-		this.removeCol = this.removeCol.bind(this);
-		this.eAddRow.addEventListener('click', this.addRow);
-		this.eAddCol.addEventListener('click', this.addCol);
-		this.eRemoveRow.addEventListener('click', this.removeRow);
-		this.eRemoveCol.addEventListener('click', this.removeCol);
+export default class FormRect extends FormGridBase<Grid2D> {
+	constructor(
+		form: HTMLFormElement,
+		patternCache: LRUCache<string, RevExp>,
+	) {
+		super(
+			form,
+			patternCache,
+			['row', 'col'],
+			new Grid2D(form.querySelector('.grid') as HTMLElement),
+		);
 	}
 
 	override refresh() {
-		this.grid.resize(this.rows, this.cols, this.double);
-
-		const data = this.grid.getBlankData();
-		const clues = this.grid.getClues();
-		try {
-			const compiledClues = clues.map(({ name, pattern, indices }) => {
-				try {
-					return { name, pattern: this.patternCache.get(pattern), indices };
-				} catch (e: unknown) {
-					throw new Error(`${e} in ${name}`);
-				}
-			});
-			const resolvedData = solve(data, compiledClues);
-			this.grid.setData(resolvedData);
-			this.error = null;
-		} catch (e: unknown) {
-			this.grid.clearData();
-			this.error = String(e);
-		}
+		this.grid.updateDouble(this.eDouble.checked);
+		super.refresh();
 	}
 
-	private addRow() {
-		++this.rows;
-		this.refresh();
-	}
-
-	private addCol() {
-		++this.cols;
-		this.refresh();
-	}
-
-	private removeRow() {
-		if (this.rows > 1) {
-			--this.rows;
-			this.refresh();
-		}
-	}
-
-	private removeCol() {
-		if (this.cols > 1) {
-			--this.cols;
-			this.refresh();
-		}
-	}
-
-	private get rows() { return Number.parseInt(this.eRows.value, 10); }
-	private set rows(v: number) { this.eRows.value = String(v); }
-	private get cols() { return Number.parseInt(this.eCols.value, 10); }
-	private set cols(v: number) { this.eCols.value = String(v); }
-	private get double() { return this.eDouble.checked; }
-
-	private set error(v: string | null) {
-		if (v !== null) {
-			this.form.classList.add('fail');
-		} else {
-			this.form.classList.remove('fail');
-		}
-		this.eError.innerText = v ?? '';
-	}
-
-	private readonly eRows = elNamed(this.form, 'rows') as HTMLInputElement;
-	private readonly eCols = elNamed(this.form, 'cols') as HTMLInputElement;
 	private readonly eDouble = elNamed(this.form, 'double') as HTMLInputElement;
-	private readonly eAddRow = elNamed(this.form, 'add-row') as HTMLButtonElement;
-	private readonly eAddCol = elNamed(this.form, 'add-col') as HTMLButtonElement;
-	private readonly eRemoveRow = elNamed(this.form, 'remove-row') as HTMLButtonElement;
-	private readonly eRemoveCol = elNamed(this.form, 'remove-col') as HTMLButtonElement;
-	private readonly eError = this.form.querySelector('.error') as HTMLElement;
-	private readonly grid = new Grid2D(this.form.querySelector('.grid') as HTMLElement);
 }
 
-class Grid2D {
+class Grid2D implements Grid {
 	private readonly patternRows: Pattern[] = [];
 	private readonly patternCols: Pattern[] = [];
 	private readonly patternAltRows: Pattern[] = [];
@@ -171,23 +107,25 @@ class Grid2D {
 		return clues;
 	}
 
-	resize(rows: number, cols: number, double: boolean) {
-		const oldRows = this.patternRows.length;
-		const oldCols = this.patternCols.length;
-		if (rows === oldRows && cols === oldCols && double === this.isDouble) {
+	updateDouble(double: boolean) {
+		if (double === this.isDouble) {
 			return;
 		}
 
-		// remove all from DOM
-		[...this.patternRows, ...this.patternCols]
-			.forEach((pattern) => this.container.removeChild(pattern.ePattern));
-		if (this.isDouble) {
-			[...this.patternAltRows, ...this.patternAltCols]
-				.forEach((pattern) => this.container.removeChild(pattern.ePattern));
-		}
-		this.cells.forEach((r) => r.forEach((cell) => this.container.removeChild(cell.eCell)));
+		this.removeDOM();
+		this.isDouble = double;
+		this.addDOM();
+	}
 
-		// update elements
+	resize([rows, cols]: number[]) {
+		const oldRows = this.patternRows.length;
+		const oldCols = this.patternCols.length;
+		if (rows === oldRows && cols === oldCols) {
+			return;
+		}
+
+		this.removeDOM();
+
 		for (let row = oldRows; row < rows; ++row) {
 			this.cells.push([]);
 			this.patternRows.push(new Pattern('row', row));
@@ -209,29 +147,38 @@ class Grid2D {
 		this.patternAltRows.length = rows;
 		this.patternAltCols.length = cols;
 		this.cells.length = rows;
-		this.isDouble = double;
 
-		// update DOM
+		this.addDOM();
+	}
+
+	private removeDOM() {
+		[...this.patternRows, ...this.patternCols]
+			.forEach((pattern) => this.container.removeChild(pattern.ePattern));
+		if (this.isDouble) {
+			[...this.patternAltRows, ...this.patternAltCols]
+				.forEach((pattern) => this.container.removeChild(pattern.ePattern));
+		}
+		this.cells.forEach((r) => r.forEach((cell) => this.container.removeChild(cell.eCell)));
+	}
+
+	private addDOM() {
+		const rows = this.patternRows.length;
+		const cols = this.patternCols.length;
+
 		this.patternCols.forEach((pattern) => this.container.appendChild(pattern.ePattern));
 		for (let row = 0; row < rows; ++row) {
 			this.container.appendChild(this.patternRows[row].ePattern);
 			this.cells[row].forEach((cell) => this.container.appendChild(cell.eCell));
-			if (double) {
+			if (this.isDouble) {
 				this.container.appendChild(this.patternAltRows[row].ePattern);
 			}
 		}
-		if (double) {
+		if (this.isDouble) {
 			this.patternAltCols.forEach((pattern) => this.container.appendChild(pattern.ePattern));
 		}
 		this.container.style.width = `calc(var(--w) * ${cols})`;
 		this.container.style.height = `calc(var(--h) * ${rows})`;
 	}
-}
-
-export interface RawClue {
-	name: string;
-	pattern: string;
-	indices: number[];
 }
 
 class Pattern {

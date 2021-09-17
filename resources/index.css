@@ -88,6 +88,9 @@ output {
 	display: block;
 	margin: 12rem auto;
 	position: relative;
+}
+
+.grid.rect {
 	--w: 3rem;
 	--h: 3rem;
 }
@@ -99,27 +102,12 @@ output {
 	user-select: none;
 }
 
-.grid button[name="add-row"] {
-	bottom: -2rem;
-	left: -4rem;
-}
+.grid.rect button[name="add-row"] { bottom: -2rem; left: -4rem; }
+.grid.rect button[name="remove-row"] { top: -2rem; left: -4rem; }
+.grid.rect button[name="add-col"] { right: -2rem; top: -4rem; }
+.grid.rect button[name="remove-col"] { left: -2rem; top: -4rem; }
 
-.grid button[name="remove-row"] {
-	top: -2rem;
-	left: -4rem;
-}
-
-.grid button[name="add-col"] {
-	right: -2rem;
-	top: -4rem;
-}
-
-.grid button[name="remove-col"] {
-	left: -2rem;
-	top: -4rem;
-}
-
-.grid .double {
+.grid.rect .double {
 	display: block;
 	position: absolute;
 	top: -1.5rem;
@@ -138,6 +126,7 @@ output {
 	font-size: 0.9rem;
 	width: 12rem;
 	background: #FCFCFE;
+	height: var(--h);
 }
 
 .grid .pattern:focus {
@@ -156,9 +145,6 @@ output {
 	border-bottom-right-radius: 5px;
 }
 
-.grid .pattern.row, .grid .pattern.altrow {
-	height: var(--h);
-}
 .grid .pattern.row {
 	left: -12rem;
 }
@@ -193,8 +179,54 @@ output {
 	font-size: 1.5rem;
 }
 
+.grid.hex {
+	--h: 3rem;
+	--d: 3.8rem;
+	--sx: var(--d);
+	--sy: calc(var(--d) * 0.866025403784439); /* sqrt(3)/2 */
+	margin: 13rem auto;
+}
+
+.grid.hex button {
+	width: 2rem;
+	height: 2rem;
+	margin: -1rem;
+}
+
+.grid.hex button[name="add-d1"] { top: calc(-8rem + 0.866025403784439rem * 5); left: calc(-5rem - 0.5rem * 5); transform: rotate(120deg); }
+.grid.hex button[name="remove-d1"] { top: calc(-8rem + 0.866025403784439rem * 3); left: calc(-5rem - 0.5rem * 3); transform: rotate(120deg); }
+.grid.hex button[name="add-d2"] { top: calc(-8rem); left: calc(-5rem + 1rem * 5); }
+.grid.hex button[name="remove-d2"] { top: calc(-8rem); left: calc(-5rem + 1rem * 3); }
+.grid.hex button[name="add-d3"] { top: calc(-8rem + 0.866025403784439rem * 5); left: calc(-5rem + 0.5rem * 5); transform: rotate(60deg); }
+.grid.hex button[name="remove-d3"] { top: calc(-8rem + 0.866025403784439rem * 3); left: calc(-5rem + 0.5rem * 3); transform: rotate(60deg); }
+
+.grid.hex .pattern, .grid.hex .cell {
+	margin: calc(var(--h) * -0.5);
+}
+.grid .pattern.d1, .grid .pattern.d2, .grid .pattern.d3 {
+	margin-left: calc(-12rem - var(--h) * -0.5);
+	width: 12rem;
+	height: var(--h);
+	text-align: right;
+	border-top-left-radius: 5px;
+	border-bottom-left-radius: 5px;
+	border-top-right-radius: 100px;
+	border-bottom-right-radius: 100px;
+	transform-origin: calc(12rem - var(--h) / 2) calc(var(--h) / 2);
+}
+.grid .pattern.d1 {
+	transform: rotate(120deg);
+}
+.grid .pattern.d3 {
+	transform: rotate(-120deg);
+}
+
+.grid.hex .cell {
+	border-radius: 100%;
+	width: var(--h);
+}
+
 .error {
-	display: block;
 	grid-column: 1 / 3;
 	font-size: 0.9rem;
 	line-height: 1rem;

@@ -29,7 +29,7 @@
 				<form id="form-rect" class="tabcontent" data-for="t2">
 					<input type="hidden" name="rows" value="2" />
 					<input type="hidden" name="cols" value="2" />
-					<section class="grid">
+					<section class="grid rect">
 						<button type="button" name="remove-col" title="Remove column">-</button>
 						<button type="button" name="add-col" title="Add column">+</button>
 						<button type="button" name="remove-row" title="Remove row">-</button>
@@ -39,7 +39,18 @@
 					<div class="error"></div>
 				</form>
 				<form id="form-hex" class="tabcontent" data-for="t3">
-					TODO
+					<input type="hidden" name="d1s" value="2" />
+					<input type="hidden" name="d2s" value="2" />
+					<input type="hidden" name="d3s" value="2" />
+					<section class="grid hex">
+						<button type="button" name="remove-d2" title="Remove axis 2">-</button>
+						<button type="button" name="add-d2" title="Add axis 2">+</button>
+						<button type="button" name="remove-d3" title="Remove axis 3">-</button>
+						<button type="button" name="add-d3" title="Add axis 3">+</button>
+						<button type="button" name="remove-d1" title="Remove axis 1">-</button>
+						<button type="button" name="add-d1" title="Add axis 1">+</button>
+					</section>
+					<div class="error"></div>
 				</form>
 			</section>
 		</main>
