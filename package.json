@@ -5,7 +5,7 @@
     "build": "rollup --config rollup.config.js"
   },
   "dependencies": {
-    "revexp": "^1.0.3"
+    "revexp": "^1.1.0"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^13.0.4",

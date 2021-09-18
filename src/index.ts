@@ -5,7 +5,7 @@ import FormSingle from './forms/FormSingle';
 import FormRect from './forms/FormRect';
 import FormHex from './forms/FormHex';
 
-const patternCache = new LRUCache(RevExp.compile, 100);
+const patternCache = new LRUCache((p: string) => RevExp.compile(p, 's'), 100);
 
 new FormSingle(el('form-single') as HTMLFormElement, patternCache).init();
 new FormRect(el('form-rect') as HTMLFormElement, patternCache).init();
